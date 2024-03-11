@@ -14,6 +14,7 @@ class TDMSlaveTX16Checker(Pyxsim.SimThread):
         sclk,
         fsync,
         dout,
+        din,
         setup_strobe_port,
         setup_data_port,
         setup_resp_port,
@@ -23,6 +24,7 @@ class TDMSlaveTX16Checker(Pyxsim.SimThread):
         self._sclk = sclk
         self._fsync = fsync
         self._dout = dout
+        self._din = din
         self._setup_strobe_port = setup_strobe_port
         self._setup_data_port = setup_data_port
         self._setup_resp_port = setup_resp_port
@@ -44,7 +46,7 @@ class TDMSlaveTX16Checker(Pyxsim.SimThread):
             frame_count = 0
             bit_count = 0
             word_count = 0
-            bits_per_word = 32
+            bits_per_word = 16
             ch_count = 16
             fsync_len = 1
 
@@ -179,11 +181,11 @@ class TDMSlaveTX16Checker(Pyxsim.SimThread):
         # in a more easily recognizable format on the wire in vcd traces
         ret = 0
 
-        ch = bit // 32
-        ch_index = bit % 32
+        ch = bit // 16
+        ch_index = bit % 16
 
-        if ch_index >= 24:
-            ret = (ch >> (ch_index - 24)) & 0b1
+        if ch_index >= 8:
+            ret = (ch >> (ch_index - 8)) & 0b1
         else:
             ret = (frame >> ch_index) & 0b1
 

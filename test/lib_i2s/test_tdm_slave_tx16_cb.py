@@ -6,7 +6,7 @@ import Pyxsim
 import pytest
 
 # DEBUG = True
-DEBUG = False
+DEBUG = True
 
 tx_offset_args = {"0": (0), "1": (1), "2": (2)}
 
@@ -24,11 +24,12 @@ def test_tdm_slavetx16_cb(capfd, request, nightly, tx_offset):
         "tile[0]:XS1_PORT_1A",
         "tile[0]:XS1_PORT_1C",
         "tile[0]:XS1_PORT_1D",
+        "tile[0]:XS1_PORT_1H",
         "tile[0]:XS1_PORT_1E",
         "tile[0]:XS1_PORT_16B",
         "tile[0]:XS1_PORT_1F",
         sample_edge=TDMSlaveTX16Checker.sample_on_rising,
-        sclk_frequency=33000000,
+        sclk_frequency=4096000,
     )
 
     ## Temporarily building externally, see hil/build_lib_i2s_tests.sh
@@ -46,7 +47,9 @@ def test_tdm_slavetx16_cb(capfd, request, nightly, tx_offset):
                 simthreads=[checker],
                 simargs=[
                     "--vcd-tracing",
-                    f"-o tdm_trace_{tx_offset}.vcd -tile tile[0] -cycles -ports -ports-detailed -cores -instructions",
+                    f"-o tdm_trace_{tx_offset}.vcd -tile tile[0] -cycles -ports -ports-detailed -cores -instructions -clock-blocks",
+                    "--trace-to",
+                    f"tdm_trace_{tx_offset}.txt",
                 ],
                 timeout=100,
             )
