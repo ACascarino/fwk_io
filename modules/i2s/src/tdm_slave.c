@@ -46,13 +46,14 @@
 #define OUT16(X, Y)          \
     asm(                     \
         "zip    %0, %1, 4\n" \
+        "bitrev %1, %1"      \
         : "+r"(X), "+r"(Y))
 
 /**
  * IN16(X, Y)
  *
- * input:  X = XXXX, Y = DCAB
- * output: X = XXAB, Y = XXCD
+ * input:  X = XXXXXXXX, Y = HGFEDCBA
+ * output: X = XXXXABCD, Y = XXXXEGFH
  *
  */
 
