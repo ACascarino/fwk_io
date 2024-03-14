@@ -309,7 +309,7 @@ DEFINE_INTERRUPT_PERMITTED(tdm_isr_permitted, void, tdm_main_loop,
                                   (tdm_interrupt_data.fsync_time +
                                    args->frame_len +
                                    args->num_bclk_cycles_offset +
-                                   TDM_PORT_BUFFER_BITS));
+                                   TDM_PORT_BUFFER_BITS - 1));
         }
         for (int out_line = 0; out_line < args->num_out; out_line++)
         {

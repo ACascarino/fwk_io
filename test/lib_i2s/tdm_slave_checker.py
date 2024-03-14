@@ -1,8 +1,21 @@
 # Copyright 2023-2024 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
 import Pyxsim
+import math
+import itertools
+import collections
 
 ONE_SECOND_FS = 1000000000000
+
+
+def sliding_window(iterable, n):
+    "Collect data into overlapping fixed-length chunks or blocks."
+    # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
+    it = iter(iterable)
+    window = collections.deque(itertools.islice(it, n - 1), maxlen=n)
+    for x in it:
+        window.append(x)
+        yield tuple(window)
 
 
 class TDMSlaveTX16Checker(Pyxsim.SimThread):
@@ -41,6 +54,24 @@ class TDMSlaveTX16Checker(Pyxsim.SimThread):
     def run(self):
         xsi = self.xsi
         print("TDM Slave TX 16 Checker Started")
+        send_strings = [
+            "0DE0",
+            "BEEF",
+            "CAFE",
+            "DEC0",
+            "BEAD",
+            "C0DE",
+            "FADE",
+            "DEAF",
+            "EADE",
+            "FEED",
+            "BADE",
+            "B0DE",
+            "CEDE",
+            "ABBA",
+            "DEAD",
+            "B0BA",
+        ]
 
         while True:
             frame_count = 0
@@ -51,6 +82,10 @@ class TDMSlaveTX16Checker(Pyxsim.SimThread):
             fsync_len = 1
 
             blcks_per_frame = bits_per_word * ch_count
+            # Each word in send_strings is 16 bits.
+            words_to_fill_frame = math.ceil(blcks_per_frame / 16)
+            cyc = itertools.cycle(send_strings)
+            send_strings_window = sliding_window(cyc, words_to_fill_frame)
 
             edge_str = (
                 "FALLING" if self._sample_edge == self.sample_on_falling else "RISING"
@@ -89,8 +124,11 @@ class TDMSlaveTX16Checker(Pyxsim.SimThread):
                 bits_rx = 0
                 bclk_val = 0
 
+                send_data_for_frame = int("".join(next(send_strings_window)), base=16)
+
                 # print(f"frame:{frame_cnt}")
                 for i in range(0, blcks_per_frame):
+                    # This is one frame, multiple frame_cnts, i is bclk number.
                     if i % bits_per_word == 0:
                         word_rx = 0
 
@@ -105,6 +143,12 @@ class TDMSlaveTX16Checker(Pyxsim.SimThread):
                         xsi.drive_port_pins(self._fsync, 1)
                     if bits_rx % blcks_per_frame == fsync_len:
                         xsi.drive_port_pins(self._fsync, 0)
+
+                    # send data here
+                    xsi.drive_port_pins(
+                        self._din,
+                        (send_data_for_frame & (1 << (blcks_per_frame - i - 1)) and 1),
+                    )
 
                     # half clock update
                     time = xsi.get_time()
